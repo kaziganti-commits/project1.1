@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+
+<style>
+  body{
+    background: url(https://img.magnific.com/fotos-premium/entra-pasado-mientras-gran-biblioteca-su-arquitectura-gotica-sus-antiguos-pergaminos-te-lleva-viaje-traves-siglos-conocimiento-sabiduria_908344-29816.jpg?semt=ais_hybrid&w=740&q=80); 
+    background-size: cover;
+    font-family: "MedievalSharp", cursive;
+  font-weight: 400;
+  font-style: normal;
+  }
+
+  .container{
+    max-width: 1200px;
+    background-color: rgba(255,255,255,0.6);
+    margin: auto;
+  }
+output{
+  color:rgb(8, 8, 97)
+}
+</style>
+
+</head>
+<body>
+   
+<div class="container">
+<label style="font-style: MedievalSharp">Título</label>
+<input type="text" name="titulo" />
+<label>Autor</label>
+<input type="text" name="autor" />
+<label>Género</label>
+<input type="text" name="genero" />
+<label>Páginas</label>
+<input type="number" name="paginas" /> 
+<label>¿Leído?</label>
+<input type="radio" name="leido" value="si">Sí</input>
+<input type="radio" name="leido" value="no">No</input><br />
+<button name="anadir">Añadir libro</button>
+<button name="guardar">Guardar</button>
+<input id="fileInput" type="file" size="50" onchange="processFiles(this.files)"><br />
+<button name="buscar">Buscar</button>
+<label>Datos del libro buscado: </label><output></output>
+<div id="libros"></div>
+</div>
+<script>
+
+const anadir = document.querySelector("anadir");  
+
+  const librosAux = [
+    {
+    titulo: "El nombre del viento",
+    autor: "Patrick Rothfuss",
+    genero: "Fantasía",
+    paginas: 900,
+    leido: true,
+  } ,{
+    titulo: "Mecanoscrit del segon origen",
+    autor: "Manuel de Pedrolo",
+    genero: "Fantasía",
+    paginas: 300,
+    leido: true,
+  }, {
+    titulo: "El día de la trilla",
+    autor: "Rebecca Yarros",
+    genero: "Fantasía",
+    paginas: 850,
+    leido: false,
+  } ]
+
+let libros = localStorage.getItem("libroAnadido") ? JSON.parse(localStorage.getItem("libroAnadido")) : librosAux;
+
+    function anadirLibro (){
+    const tituloAnadido = document.querySelector("[name=titulo]").value;
+    const autorAnadido = document.querySelector("[name=autor]").value;
+    const generoAnadido = document.querySelector("[name=genero]").value;
+    const paginasAnadido = document.querySelector("[name=paginas]").value;
+    const leidoAnadido = document.querySelector("[name=leido]:checked");
+    if (!tituloAnadido || !autorAnadido || !generoAnadido || !paginasAnadido || !leidoAnadido) {
+      alert("Introduce los datos que faltan.");
+      return;
+     
+    }
+    const libroNuevo = {
+        titulo: tituloAnadido,
+        autor: autorAnadido,
+        genero: generoAnadido,
+        paginas: paginasAnadido,
+        leido: leidoAnadido,
+    }
+
+  libros.push(libroNuevo)
+  const dataConvertida = JSON.stringify(libros);
+  localStorage.setItem("anadir", dataConvertida);
+  }
+  
+  function buscar () {
+    const titulo = document.querySelector("[name=titulo]").value;
+    const autor = document.querySelector("[name=autor]").value;
+    const genero = document.querySelector("[name=genero]").value;
+    const paginas = document.querySelector("[name=paginas]").value;
+    const leido = document.querySelector("[name=leido]:checked");
+
+    let resultado = [];
+
+    if (titulo) {
+      const libro = libros.find(l => l.titulo === titulo);
+      if (libro) resultado = [libro];
+    } else if (autor) {
+      const libro = libros.find(l => l.autor === autor);
+      if (libro) resultado = [libro];
+    } else if (genero) {
+      resultado = libros.filter(l => l.genero === genero);
+    } else if (paginas !== "") {
+      const num = Number(paginas);
+      if (num < 400) {
+        resultado = libros.filter(l => l.paginas < 400);
+      } else if (num >= 400 && num <= 800) {
+        resultado = libros.filter(l => l.paginas >= 400 && l.paginas <= 800);
+      } else if (num > 800) {
+        resultado = libros.filter(l => l.paginas > 800);
+      }
+    } else if (leido) {
+      const libroLeido = leido.value === "si";
+      resultado = libros.filter(l => l.leido === libroLeido);
+    }
+
+    let code = "";
+    resultado.forEach(libro => {
+      code += "<p>" + libro.titulo + "- " + libro.autor + "- " + libro.genero + "- " + libro.paginas + "páginas - Leído: " + (libro.leido ? "Sí" : "No") + "</p>";
+    });
+    document.querySelector("output").innerHTML = code || "No se encontró el libro";
+  }
+
+    function downloadJSON(filename, jsonData) {
+      console.log(jsonData);
+  const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  alert("Fichero guardado")
+}
+
+function processFiles(data) {
+    console.log(data);
+    const file = data[0]; // Obtén el primer archivo seleccionado
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const json = JSON.parse(event.target.result); // Parsear el contenido como JSON
+                console.log(json);
+                libros = json;
+            } catch (error) {
+                console.error("El archivo no contiene un JSON válido.", error);
+            }
+        };
+        reader.readAsText(file); // Leer el archivo como texto
+    } else {
+        console.error("No se seleccionó ningún archivo.");
+    }
+}
+
+  document.querySelector("[name=anadir]").addEventListener("click", anadirLibro);
+  document.querySelector("[name=buscar]").addEventListener("click", buscar);
+  document.querySelector("[name=guardar]").addEventListener("click", ()=> {
+    downloadJSON("libros.json", libros)
+   alert("fichero guardado")
+  });
+
+
+</script>
+
+</body>
+</html>
